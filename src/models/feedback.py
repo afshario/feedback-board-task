@@ -13,7 +13,6 @@ class FeedBack(Base):
       __tablename__ = "feedbacks"
     
       id = Column(Integer, primary_key=True, index=True)
-      author = Column(String(50), ForeignKey("users.username"), nullable=False)
       title = Column(String(100), nullable=False)
       content = Column(Text, nullable=False)
       status = Column(
@@ -22,5 +21,5 @@ class FeedBack(Base):
             nullable=False,
             index=True
       )
-      created_at = Column(DateTime(timezone=True), server_default=func.now())
-      updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+      created_at = Column(DateTime, server_default=func.now())
+      updated_at = Column(DateTime, onupdate=func.now())   
