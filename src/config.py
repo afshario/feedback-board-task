@@ -8,5 +8,7 @@ PASS = os.getenv("DB_PASS")
 SERVER = os.getenv("DB_SERVER")
 PORT = os.getenv("DB_PORT")
 DB = os.getenv("DB")
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
 
 DB_URL = f"postgresql://{USER}:{PASS}@{SERVER}:{PORT}/{DB}"
