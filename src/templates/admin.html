@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css');
+        body {
+            font-family: 'Vazir', system-ui, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .card {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .table th {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .content-cell {
+            max-width: 350px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        h2, h4, h5 {
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Feedback Dashboard</h2>
+        <div>
+            <button class="btn btn-outline-primary me-2" onclick="resetAndLoad()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+            <button class="btn btn-danger" onclick="logout()">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <table class="table table-bordered table-hover mb-0" id="feedbackTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Content</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="feedbackTableBody">
+                    <!-- Filled by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Load More -->
+    <div class="text-center mt-4">
+        <button id="loadMoreBtn" class="btn btn-outline-primary px-4" onclick="loadMore()">
+            Load More
+        </button>
+    </div>
+</div>
+
+<script>
+const token = localStorage.getItem("token");
+if (!token) window.location.href = "/login";
+
+let currentSkip = 0;
+const limit = 10;
+
+// Load feedbacks with pagination
+async function loadFeedbacks(skip = 0, append = false) {
+    try {
+        const res = await fetch(`/api/feedback?skip=${skip}&limit=${limit}`, {
+            headers: { "Authorization": "Bearer " + token }
+        });
+        
+        const feedbacks = await res.json();
+        const tbody = document.getElementById("feedbackTableBody");
+
+        if (!append) {
+            tbody.innerHTML = "";
+        }
+
+        if (feedbacks.length === 0 && !append) {
+            tbody.innerHTML = `
+                <tr><td colspan="5" class="text-center py-4">No feedback found.</td></tr>`;
+            document.getElementById("loadMoreBtn").style.display = "none";
+            return;
+        }
+
+        feedbacks.forEach(fb => {
+            const row = `
+                <tr>
+                    <td><strong>#${fb.id}</strong></td>
+                    <td>${fb.title}</td>
+                    <td class="content-cell" title="${fb.content}">${fb.content}</td>
+                    <td>
+                        <select class="form-select form-select-sm" onchange="updateStatus(${fb.id}, this.value)">
+                            <option value="submitted" ${fb.status === "submitted" ? "selected" : ""}>Submitted</option>
+                            <option value="under_review" ${fb.status === "under_review" ? "selected" : ""}>Under Review</option>
+                            <option value="processed" ${fb.status === "processed" ? "selected" : ""}>Processed</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-danger" onclick="deleteFeedback(${fb.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>`;
+            tbody.innerHTML += row;
+        });
+
+        currentSkip = skip + feedbacks.length;
+        
+        document.getElementById("loadMoreBtn").style.display = 
+            feedbacks.length < limit ? "none" : "block";
+
+    } catch (e) {
+        console.error(e);
+        alert("Failed to load feedbacks");
+    }
+}
+
+async function updateStatus(id, status) {
+    try {
+        const res = await fetch(`/api/feedback/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            },
+            body: JSON.stringify({ status: status })
+        });
+        if (res.ok) {
+            alert("Status updated successfully");
+        } else {
+            alert("Failed to update status");
+        }
+    } catch (err) {
+        alert("Error connecting to server");
+    }
+}
+
+async function deleteFeedback(id) {
+    if (!confirm("Delete this feedback?")) return;
+    
+    try {
+        const res = await fetch(`/api/feedback/${id}`, {
+            method: "DELETE",
+            headers: { "Authorization": "Bearer " + token }
+        });
+        if (res.ok) {
+            alert("Feedback deleted");
+            resetAndLoad();
+        } else {
+            alert("Failed to delete");
+        }
+    } catch (err) {
+        alert("Error connecting to server");
+    }
+}
+
+function loadMore() {
+    loadFeedbacks(currentSkip, true);
+}
+
+function resetAndLoad() {
+    currentSkip = 0;
+    loadFeedbacks(0, false);
+}
+
+function logout() {
+    localStorage.removeItem("token");
+    window.location.href = "/login";
+}
+
+// Initial load
+loadFeedbacks();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
