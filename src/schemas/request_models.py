@@ -24,6 +24,6 @@ class FeedBackCreate(BaseModel):
 
 # Request validation for updating existing feedback
 class FeedBackUpdate(BaseModel):
-      title: str
-      content: str
+      title: str = None
+      content: str = None
       status: FeedbackStatus
