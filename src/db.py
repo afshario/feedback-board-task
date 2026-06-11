@@ -24,7 +24,7 @@ Base = declarative_base()
 
 
 # get_db dependency for endpoints
-def get_db() -> Generator[Session]:
+def get_db() -> Generator[Session, None, None]:
       '''
       create session for each request
       '''
