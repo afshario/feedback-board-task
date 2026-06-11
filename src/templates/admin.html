@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,9 +25,6 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-        }
-        h2, h4, h5 {
-            font-weight: 500;
         }
     </style>
 </head>
@@ -58,14 +55,11 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody id="feedbackTableBody">
-                    <!-- Filled by JavaScript -->
-                </tbody>
+                <tbody id="feedbackTableBody"></tbody>
             </table>
         </div>
     </div>
 
-    <!-- Load More -->
     <div class="text-center mt-4">
         <button id="loadMoreBtn" class="btn btn-outline-primary px-4" onclick="loadMore()">
             Load More
@@ -74,121 +68,140 @@
 </div>
 
 <script>
-const token = localStorage.getItem("token");
-if (!token) window.location.href = "/login";
-
-let currentSkip = 0;
-const limit = 10;
-
-// Load feedbacks with pagination
-async function loadFeedbacks(skip = 0, append = false) {
-    try {
-        const res = await fetch(`/api/feedback?skip=${skip}&limit=${limit}`, {
-            headers: { "Authorization": "Bearer " + token }
-        });
-        
-        const feedbacks = await res.json();
-        const tbody = document.getElementById("feedbackTableBody");
-
-        if (!append) {
-            tbody.innerHTML = "";
-        }
-
-        if (feedbacks.length === 0 && !append) {
-            tbody.innerHTML = `
-                <tr><td colspan="5" class="text-center py-4">No feedback found.</td></tr>`;
-            document.getElementById("loadMoreBtn").style.display = "none";
-            return;
-        }
-
-        feedbacks.forEach(fb => {
-            const row = `
-                <tr>
-                    <td><strong>#${fb.id}</strong></td>
-                    <td>${fb.title}</td>
-                    <td class="content-cell" title="${fb.content}">${fb.content}</td>
-                    <td>
-                        <select class="form-select form-select-sm" onchange="updateStatus(${fb.id}, this.value)">
-                            <option value="submitted" ${fb.status === "submitted" ? "selected" : ""}>Submitted</option>
-                            <option value="under_review" ${fb.status === "under_review" ? "selected" : ""}>Under Review</option>
-                            <option value="processed" ${fb.status === "processed" ? "selected" : ""}>Processed</option>
-                        </select>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-danger" onclick="deleteFeedback(${fb.id})">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                </tr>`;
-            tbody.innerHTML += row;
-        });
-
-        currentSkip = skip + feedbacks.length;
-        
-        document.getElementById("loadMoreBtn").style.display = 
-            feedbacks.length < limit ? "none" : "block";
-
-    } catch (e) {
-        console.error(e);
-        alert("Failed to load feedbacks");
-    }
-}
-
-async function updateStatus(id, status) {
-    try {
-        const res = await fetch(`/api/feedback/${id}`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + token
-            },
-            body: JSON.stringify({ status: status })
-        });
-        if (res.ok) {
-            alert("Status updated successfully");
-        } else {
-            alert("Failed to update status");
-        }
-    } catch (err) {
-        alert("Error connecting to server");
-    }
-}
-
-async function deleteFeedback(id) {
-    if (!confirm("Delete this feedback?")) return;
+    const token = localStorage.getItem("token");
     
-    try {
-        const res = await fetch(`/api/feedback/${id}`, {
-            method: "DELETE",
-            headers: { "Authorization": "Bearer " + token }
-        });
-        if (res.ok) {
-            alert("Feedback deleted");
-            resetAndLoad();
-        } else {
-            alert("Failed to delete");
-        }
-    } catch (err) {
-        alert("Error connecting to server");
+    if (!token) {
+        window.location.href = "/login?next=/admin";
     }
-}
 
-function loadMore() {
-    loadFeedbacks(currentSkip, true);
-}
+    let currentSkip = 0;
+    const limit = 10;
 
-function resetAndLoad() {
-    currentSkip = 0;
-    loadFeedbacks(0, false);
-}
+    async function loadFeedbacks(skip = 0, append = false) {
+        try {
+            const res = await fetch(`/api/feedback?skip=${skip}&limit=${limit}`, {
+                headers: { "Authorization": "Bearer " + token }
+            });
 
-function logout() {
-    localStorage.removeItem("token");
-    window.location.href = "/login";
-}
+            if (res.status === 401) {
+                localStorage.removeItem("token");
+                window.location.href = "/login?next=/admin";
+                return;
+            }
 
-// Initial load
-loadFeedbacks();
+            const feedbacks = await res.json();
+            const tbody = document.getElementById("feedbackTableBody");
+
+            if (!append) {
+                tbody.innerHTML = "";
+            }
+
+            if (feedbacks.length === 0 && !append) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4">No feedback found.</td></tr>`;
+                document.getElementById("loadMoreBtn").style.display = "none";
+                return;
+            }
+
+            feedbacks.forEach(fb => {
+                const row = `
+                    <tr>
+                        <td><strong>#${fb.id}</strong></td>
+                        <td>${fb.title}</td>
+                        <td class="content-cell" title="${fb.content}">${fb.content}</td>
+                        <td>
+                            <select class="form-select form-select-sm" onchange="updateStatus(${fb.id}, this.value)">
+                                <option value="submitted" ${fb.status === "submitted" ? "selected" : ""}>Submitted</option>
+                                <option value="under_review" ${fb.status === "under_review" ? "selected" : ""}>Under Review</option>
+                                <option value="processed" ${fb.status === "processed" ? "selected" : ""}>Processed</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="deleteFeedback(${fb.id})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+                tbody.innerHTML += row;
+            });
+
+            currentSkip = skip + feedbacks.length;
+            document.getElementById("loadMoreBtn").style.display = 
+                feedbacks.length < limit ? "none" : "block";
+
+        } catch (e) {
+            console.error(e);
+            alert("Failed to load feedbacks");
+        }
+    }
+
+    async function updateStatus(id, status) {
+        try {
+            const res = await fetch(`/api/feedback/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token
+                },
+                body: JSON.stringify({ status: status })
+            });
+
+            if (res.status === 401) {
+                localStorage.removeItem("token");
+                window.location.href = "/login?next=/admin";
+                return;
+            }
+
+            if (res.ok) {
+                alert("Status updated successfully");
+            } else {
+                alert("Failed to update status");
+            }
+        } catch (err) {
+            alert("Error connecting to server");
+        }
+    }
+
+    async function deleteFeedback(id) {
+        if (!confirm("Delete this feedback?")) return;
+        
+        try {
+            const res = await fetch(`/api/feedback/${id}`, {
+                method: "DELETE",
+                headers: { "Authorization": "Bearer " + token }
+            });
+
+            if (res.status === 401) {
+                localStorage.removeItem("token");
+                window.location.href = "/login?next=/admin";
+                return;
+            }
+
+            if (res.ok) {
+                alert("Feedback deleted");
+                resetAndLoad();
+            } else {
+                alert("Failed to delete");
+            }
+        } catch (err) {
+            alert("Error connecting to server");
+        }
+    }
+
+    function loadMore() {
+        loadFeedbacks(currentSkip, true);
+    }
+
+    function resetAndLoad() {
+        currentSkip = 0;
+        loadFeedbacks(0, false);
+    }
+
+    function logout() {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+    }
+
+    loadFeedbacks();
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>

@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import jwt
+from jose import jwt, JWTError
 from config import SECRET_KEY,ALGORITHM
 
 security = HTTPBearer()
@@ -20,14 +20,13 @@ def verify_jwt(
 
             return payload
 
-      except jwt.ExpiredSignatureError:
+      except JWTError as e: 
             raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token expired"
+                  status_code=status.HTTP_401_UNAUTHORIZED,
+                  detail=f"Invalid token: {str(e)}"
             )
-
-      except jwt.InvalidTokenError:
+      except Exception:
             raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
+                  status_code=status.HTTP_401_UNAUTHORIZED,
+                  detail="Invalid token"
             )
