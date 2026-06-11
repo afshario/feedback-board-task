@@ -4,7 +4,7 @@ from sqlalchemy.sql import func
 from db import Base
 
 # Enum for feedback status tracking
-class FeedbackStatus(enum.Enum):
+class FeedbackStatus(str,enum.Enum):
       SUBMITTED = "submitted"
       UNDER_REVIEW = "under_review"
       PROCESSED = "processed"
@@ -17,8 +17,8 @@ class FeedBack(Base):
       content = Column(Text, nullable=False)
       status = Column(
             Enum(FeedbackStatus),
-            default=FeedbackStatus.SUBMITTED,
-            nullable=False,
+            default=FeedbackStatus.SUBMITTED,  
+            nullable=False,  
             index=True
       )
       created_at = Column(DateTime, server_default=func.now())
